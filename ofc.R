@@ -1,0 +1,30 @@
+library(readxl)
+ESR <- read_excel("ESR.xlsx")
+ESR$PCC[is.na(ESR$PCC)] <- 0
+n=nrow(ESR)
+set.seed(150)
+n=nrow(ESR)
+summary(ESR)
+ESR$PCC[is.na(ESR$PCC)] <- 0
+ESR$State<-as.factor(ESR$State)
+ESR$Project<-as.factor(ESR$Project)
+ESR$`SesimicZone`<-as.factor(ESR$`SesimicZone`)
+ESR$`NatureofStrata`<-as.factor(ESR$`NatureofStrata`)
+trainIndex<-sample(1:n, size = round(0.8*n), replace=FALSE)
+traindata<-ESR[trainIndex,]
+print(paste(ESR))
+testdata<-ESR[-trainIndex,]
+MPCC <- randomForest(PCC ~ ., data=traindata[c(1,3,4,5,7,8,9)], ntree=5)
+MRCC <- randomForest(RCC ~ ., data=traindata[c(1,3,4,5,7,8,10)], ntree=5)
+Mfw <-randomForest(Formwork ~ ., data=traindata[c(1,3,4,5,7,8,11)], ntree=5)
+MSteel <-randomForest(Rft ~ ., data=traindata[c(1,3,4,5,7,8,12)], ntree=5)
+Mrate <-randomForest(RatePerLit ~ ., data=traindata[c(1,3,4,5,7,8,13)], ntree=10)
+pred_grid <- data.frame( State=input$State,SesimicZone=input$Zone, WindSpeed=as.numeric(input$Windspeed),   SBC=as.numeric(input$SBC), Capacity = as.numeric(input$Capacity)  , StagingHeight=as.numeric(input$Height) )
+levels(pred_grid$State) <- levels(testdata$State)
+levels(pred_grid$SesimicZone) <- levels(testdata$SesimicZone)
+predPCC<-round(predict(MPCC, pred_grid),2)
+predRCC<-round(predict(MRCC, pred_grid),2)
+predfw<-round(predict(Mfw, pred_grid),2)
+predSteel<-round(predict(MSteel, pred_grid),2)
+predrate<-round(predict(Mrate, pred_grid),2)
+predCost<- predrate * as.numeric(input$Capacity) * 1000;
